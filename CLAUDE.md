@@ -178,4 +178,4 @@ Each artifact type will have:
 
 - [PRD.md](PRD.md) - Product Requirements Document
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture decisions and implementation details
-- [pattern.yaml](Patterns/pattern-template/pattern.yaml) - Pattern template structure
+- [pattern.yaml](Patterns/patterns/pattern-template/pattern.yaml) - Pattern template structure
