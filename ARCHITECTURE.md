@@ -633,14 +633,14 @@ jobs:
           curl -X POST \
             -H "Authorization: token ${{ secrets.WEBSITE_REPO_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/moayadiorg/catatlog/dispatches \
+            https://api.github.com/repos/moayadiorg/catalog/dispatches \
             -d '{"event_type":"pattern-updated"}'
 ```
 
 **Repositories:**
 - **Patterns Repository**: https://github.com/moayadiorg/patterns
-- **Catalog Website Repository**: https://github.com/moayadiorg/catatlog
-- **Website URL**: https://moayadiorg.github.io/catatlog
+- **Catalog Website Repository**: https://github.com/moayadiorg/catalog
+- **Website URL**: https://moayadiorg.github.io/catalog
 
 ### 2. SME Notification Mechanism
 
