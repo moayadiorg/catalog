@@ -22,12 +22,19 @@ export default defineConfig({
 			},
 			sidebar: [
 				{
-					label: 'Guides',
-					autogenerate: { directory: 'guides' },
+					label: 'Getting Started',
+					items: [
+						{ label: 'How to Use', slug: 'getting-started/how-to-use' },
+						{ label: 'Contributing', slug: 'getting-started/contributing' },
+					],
 				},
 				{
 					label: 'Patterns',
 					autogenerate: { directory: 'patterns' },
+				},
+				{
+					label: 'Guides',
+					autogenerate: { directory: 'guides' },
 				},
 				{
 					label: 'Reference',

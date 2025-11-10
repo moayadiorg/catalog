@@ -1,6 +1,21 @@
 ---
 title: Circuit Breaker Pattern
 description: A resilience pattern that prevents cascading failures in distributed systems
+category: Resilience
+difficulty: intermediate
+technologies:
+  - name: JavaScript
+    version: "ES6+"
+  - name: Node.js
+    version: "14+"
+author: Technical Patterns Catalog
+submittedDate: 2024-01-15
+lastUpdated: 2024-01-15
+tags:
+  - resilience
+  - fault-tolerance
+  - microservices
+  - distributed-systems
 ---
 
 ## Overview

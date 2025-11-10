@@ -1,0 +1,420 @@
+---
+import { getCollection } from 'astro:content';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+// Get all patterns
+const patterns = await getCollection('docs', ({ id }) => id.startsWith('patterns/') && !id.endsWith('index.mdx'));
+
+// Extract unique categories and technologies
+const categories = [...new Set(patterns.map(p => p.data.category).filter(Boolean))];
+const allTechnologies = patterns.flatMap(p => p.data.technologies || []).map(t => t.name);
+const technologies = [...new Set(allTechnologies)];
+
+const pageProps = {
+  frontmatter: {
+    title: 'Pattern Catalog',
+    description: 'Browse and filter our complete collection of technical patterns'
+  },
+  headings: []
+};
+---
+
+<StarlightPage {...pageProps}>
+  <div class="patterns-catalog">
+    <div class="catalog-header">
+      <h1>Pattern Catalog</h1>
+      <p class="catalog-description">
+        Browse our complete collection of technical architecture patterns. Use the filters below to find patterns that match your needs.
+      </p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <label for="search">Search</label>
+        <input
+          type="text"
+          id="search"
+          placeholder="Search patterns..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="category">Category</label>
+        <select id="category" class="filter-select">
+          <option value="">All Categories</option>
+          {categories.map(cat => (
+            <option value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="difficulty">Difficulty</label>
+        <select id="difficulty" class="filter-select">
+          <option value="">All Levels</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="technology">Technology</label>
+        <select id="technology" class="filter-select">
+          <option value="">All Technologies</option>
+          {technologies.map(tech => (
+            <option value={tech}>{tech}</option>
+          ))}
+        </select>
+      </div>
+
+      <button id="reset-filters" class="reset-button">Reset Filters</button>
+    </div>
+
+    <!-- Results count -->
+    <div class="results-info">
+      <span id="results-count">Showing {patterns.length} patterns</span>
+    </div>
+
+    <!-- Patterns grid -->
+    <div class="patterns-grid" id="patterns-grid">
+      {patterns.map((pattern) => {
+        const { title, description, category, difficulty, technologies } = pattern.data;
+        const slug = pattern.slug;
+
+        return (
+          <div
+            class="pattern-card"
+            data-title={title.toLowerCase()}
+            data-description={description?.toLowerCase() || ''}
+            data-category={category || ''}
+            data-difficulty={difficulty || ''}
+            data-technologies={(technologies?.map(t => t.name) || []).join(',')}
+          >
+            <div class="card-header">
+              {category && (
+                <span class="category-badge">
+                  {category}
+                </span>
+              )}
+              {difficulty && (
+                <span class={`difficulty-badge difficulty-${difficulty}`}>
+                  {difficulty}
+                </span>
+              )}
+            </div>
+
+            <h3 class="card-title">
+              <a href={`/catalog/${slug}`}>{title}</a>
+            </h3>
+
+            {description && (
+              <p class="card-description">{description}</p>
+            )}
+
+            {technologies && technologies.length > 0 && (
+              <div class="technologies">
+                {technologies.slice(0, 3).map((tech) => (
+                  <span class="tech-badge">{tech.name}</span>
+                ))}
+                {technologies.length > 3 && (
+                  <span class="tech-badge more">+{technologies.length - 3} more</span>
+                )}
+              </div>
+            )}
+
+            <a href={`/catalog/${slug}`} class="view-link">
+              View Pattern →
+            </a>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- No results message -->
+    <div id="no-results" class="no-results" style="display: none;">
+      <p>No patterns found matching your filters.</p>
+      <button id="reset-from-empty" class="reset-button">Reset Filters</button>
+    </div>
+  </div>
+
+  <script>
+    // Client-side filtering logic
+    const searchInput = document.getElementById('search') as HTMLInputElement;
+    const categorySelect = document.getElementById('category') as HTMLSelectElement;
+    const difficultySelect = document.getElementById('difficulty') as HTMLSelectElement;
+    const technologySelect = document.getElementById('technology') as HTMLSelectElement;
+    const resetButton = document.getElementById('reset-filters') as HTMLButtonElement;
+    const resetFromEmpty = document.getElementById('reset-from-empty') as HTMLButtonElement;
+    const patternsGrid = document.getElementById('patterns-grid') as HTMLElement;
+    const noResults = document.getElementById('no-results') as HTMLElement;
+    const resultsCount = document.getElementById('results-count') as HTMLElement;
+
+    function filterPatterns() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const selectedCategory = categorySelect.value;
+      const selectedDifficulty = difficultySelect.value;
+      const selectedTechnology = technologySelect.value;
+
+      const cards = patternsGrid.querySelectorAll('.pattern-card');
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const htmlCard = card as HTMLElement;
+        const title = htmlCard.dataset.title || '';
+        const description = htmlCard.dataset.description || '';
+        const category = htmlCard.dataset.category || '';
+        const difficulty = htmlCard.dataset.difficulty || '';
+        const technologies = htmlCard.dataset.technologies || '';
+
+        const matchesSearch = !searchTerm || title.includes(searchTerm) || description.includes(searchTerm);
+        const matchesCategory = !selectedCategory || category === selectedCategory;
+        const matchesDifficulty = !selectedDifficulty || difficulty === selectedDifficulty;
+        const matchesTechnology = !selectedTechnology || technologies.includes(selectedTechnology);
+
+        const isVisible = matchesSearch && matchesCategory && matchesDifficulty && matchesTechnology;
+
+        htmlCard.style.display = isVisible ? 'flex' : 'none';
+        if (isVisible) visibleCount++;
+      });
+
+      // Update results count
+      resultsCount.textContent = `Showing ${visibleCount} pattern${visibleCount !== 1 ? 's' : ''}`;
+
+      // Show/hide no results message
+      if (visibleCount === 0) {
+        patternsGrid.style.display = 'none';
+        noResults.style.display = 'block';
+      } else {
+        patternsGrid.style.display = 'grid';
+        noResults.style.display = 'none';
+      }
+    }
+
+    function resetFilters() {
+      searchInput.value = '';
+      categorySelect.value = '';
+      difficultySelect.value = '';
+      technologySelect.value = '';
+      filterPatterns();
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', filterPatterns);
+    categorySelect.addEventListener('change', filterPatterns);
+    difficultySelect.addEventListener('change', filterPatterns);
+    technologySelect.addEventListener('change', filterPatterns);
+    resetButton.addEventListener('click', resetFilters);
+    resetFromEmpty.addEventListener('click', resetFilters);
+  </script>
+
+  <style>
+    .patterns-catalog {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .catalog-header {
+      margin-bottom: 2rem;
+    }
+
+    .catalog-header h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .catalog-description {
+      color: var(--sl-color-gray-2);
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+
+    .filters-section {
+      background: var(--sl-color-bg-sidebar);
+      border: 1px solid var(--sl-color-gray-5);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .filter-group label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--sl-color-gray-3);
+    }
+
+    .search-input,
+    .filter-select {
+      padding: 0.5rem;
+      border: 1px solid var(--sl-color-gray-5);
+      border-radius: 0.375rem;
+      background: var(--sl-color-black);
+      color: var(--sl-color-white);
+      font-size: 0.9375rem;
+    }
+
+    .search-input:focus,
+    .filter-select:focus {
+      outline: 2px solid var(--sl-color-accent);
+      outline-offset: 2px;
+    }
+
+    .reset-button {
+      padding: 0.5rem 1rem;
+      background: var(--sl-color-accent);
+      color: var(--sl-color-white);
+      border: none;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-end;
+      transition: opacity 0.2s;
+    }
+
+    .reset-button:hover {
+      opacity: 0.8;
+    }
+
+    .results-info {
+      margin-bottom: 1.5rem;
+      color: var(--sl-color-gray-2);
+      font-size: 0.9375rem;
+    }
+
+    .patterns-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .pattern-card {
+      background: var(--sl-color-bg-sidebar);
+      border: 1px solid var(--sl-color-gray-5);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .pattern-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: var(--sl-color-accent);
+    }
+
+    .card-header {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .category-badge {
+      background: var(--sl-color-accent-low);
+      color: var(--sl-color-accent-high);
+      padding: 0.25rem 0.625rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .difficulty-badge {
+      padding: 0.25rem 0.625rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .difficulty-beginner {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .difficulty-intermediate {
+      background: #fef3c7;
+      color: #854d0e;
+    }
+
+    .difficulty-advanced {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .card-title a {
+      color: var(--sl-color-white);
+      text-decoration: none;
+    }
+
+    .card-title a:hover {
+      color: var(--sl-color-accent);
+    }
+
+    .card-description {
+      color: var(--sl-color-gray-2);
+      line-height: 1.6;
+      flex-grow: 1;
+      margin: 0;
+    }
+
+    .technologies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tech-badge {
+      background: var(--sl-color-gray-6);
+      color: var(--sl-color-gray-2);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .tech-badge.more {
+      background: var(--sl-color-gray-5);
+      font-style: italic;
+    }
+
+    .view-link {
+      color: var(--sl-color-accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+    }
+
+    .view-link:hover {
+      text-decoration: underline;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--sl-color-gray-2);
+    }
+
+    .no-results p {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</StarlightPage>

@@ -1,0 +1,180 @@
+---
+interface Version {
+  version: string;
+  date: string;
+  author?: string;
+  changes: string[];
+}
+
+interface Props {
+  versions: Version[];
+}
+
+const { versions } = Astro.props;
+---
+
+<div class="version-history">
+  <h2>Version History</h2>
+
+  <div class="timeline">
+    {versions.map((v, index) => (
+      <div class="version-entry">
+        <div class="version-marker">
+          <span class="version-dot" class:list={[{ latest: index === 0 }]}></span>
+          {index < versions.length - 1 && <div class="version-line"></div>}
+        </div>
+
+        <div class="version-content">
+          <div class="version-header">
+            <span class="version-number">v{v.version}</span>
+            {index === 0 && <span class="latest-badge">Latest</span>}
+            <span class="version-date">{v.date}</span>
+          </div>
+
+          {v.author && (
+            <div class="version-author">
+              <span class="author-label">By:</span> {v.author}
+            </div>
+          )}
+
+          <ul class="version-changes">
+            {v.changes.map((change) => (
+              <li>{change}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .version-history {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+  }
+
+  .version-history h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    color: var(--sl-color-white);
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .version-entry {
+    display: flex;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .version-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 0.375rem;
+  }
+
+  .version-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--sl-color-gray-4);
+    border: 2px solid var(--sl-color-bg);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .version-dot.latest {
+    background: var(--sl-color-accent);
+    box-shadow: 0 0 0 4px var(--sl-color-accent-low);
+  }
+
+  .version-line {
+    width: 2px;
+    flex-grow: 1;
+    background: var(--sl-color-gray-5);
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    min-height: 1rem;
+  }
+
+  .version-content {
+    flex: 1;
+    padding-bottom: 1.5rem;
+  }
+
+  .version-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .version-number {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--sl-color-white);
+  }
+
+  .latest-badge {
+    background: var(--sl-color-accent);
+    color: var(--sl-color-white);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .version-date {
+    color: var(--sl-color-gray-2);
+    font-size: 0.875rem;
+    margin-left: auto;
+  }
+
+  .version-author {
+    color: var(--sl-color-gray-2);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .author-label {
+    font-weight: 600;
+    color: var(--sl-color-gray-3);
+  }
+
+  .version-changes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .version-changes li {
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--sl-color-gray-2);
+    line-height: 1.6;
+  }
+
+  .version-changes li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--sl-color-accent);
+    font-weight: 700;
+  }
+</style>

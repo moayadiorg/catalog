@@ -1,0 +1,272 @@
+---
+import type { Props } from '@astrojs/starlight/props';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import TechnologyBadge from '../components/TechnologyBadge.astro';
+
+// Extract pattern metadata from frontmatter
+const { frontmatter } = Astro.props.entry.data;
+
+interface PatternMetadata {
+  category?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  technologies?: Array<{ name: string; version?: string; icon?: string; color?: string }>;
+  author?: string;
+  submittedDate?: string;
+  lastUpdated?: string;
+  status?: 'draft' | 'review' | 'published';
+  tags?: string[];
+}
+
+const metadata: PatternMetadata = {
+  category: frontmatter.category,
+  difficulty: frontmatter.difficulty || 'intermediate',
+  technologies: frontmatter.technologies || [],
+  author: frontmatter.author,
+  submittedDate: frontmatter.submittedDate,
+  lastUpdated: frontmatter.lastUpdated,
+  status: frontmatter.status || 'published',
+  tags: frontmatter.tags || []
+};
+
+const difficultyColors = {
+  beginner: 'bg-green-100 text-green-800',
+  intermediate: 'bg-yellow-100 text-yellow-800',
+  advanced: 'bg-red-100 text-red-800'
+};
+
+const categoryIcons: Record<string, string> = {
+  automation: '🤖',
+  observability: '👁️',
+  security: '🔒',
+  monitoring: '📊',
+  integration: '🔗',
+  'data-protection': '💾',
+  resilience: '⚡'
+};
+---
+
+<StarlightPage {...Astro.props}>
+  <div class="pattern-layout">
+    <!-- Pattern Metadata Header -->
+    <div class="pattern-metadata">
+      <div class="metadata-row">
+        {metadata.category && (
+          <div class="metadata-item">
+            <span class="metadata-label">Category</span>
+            <span class="metadata-value category-badge">
+              <span class="category-icon">{categoryIcons[metadata.category.toLowerCase()] || '📋'}</span>
+              {metadata.category}
+            </span>
+          </div>
+        )}
+
+        {metadata.difficulty && (
+          <div class="metadata-item">
+            <span class="metadata-label">Difficulty</span>
+            <span class={`metadata-value difficulty-badge ${difficultyColors[metadata.difficulty]}`}>
+              {metadata.difficulty}
+            </span>
+          </div>
+        )}
+
+        {metadata.status && metadata.status !== 'published' && (
+          <div class="metadata-item">
+            <span class="metadata-label">Status</span>
+            <span class="metadata-value status-badge">
+              {metadata.status}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {metadata.technologies && metadata.technologies.length > 0 && (
+        <div class="metadata-row">
+          <div class="metadata-item full-width">
+            <span class="metadata-label">Technologies</span>
+            <div class="technologies-list">
+              {metadata.technologies.map((tech) => (
+                <TechnologyBadge {...tech} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(metadata.author || metadata.submittedDate || metadata.lastUpdated) && (
+        <div class="metadata-row metadata-footer">
+          {metadata.author && (
+            <span class="metadata-text">
+              <strong>Author:</strong> {metadata.author}
+            </span>
+          )}
+          {metadata.submittedDate && (
+            <span class="metadata-text">
+              <strong>Submitted:</strong> {metadata.submittedDate}
+            </span>
+          )}
+          {metadata.lastUpdated && (
+            <span class="metadata-text">
+              <strong>Last Updated:</strong> {metadata.lastUpdated}
+            </span>
+          )}
+        </div>
+      )}
+
+      {metadata.tags && metadata.tags.length > 0 && (
+        <div class="metadata-row">
+          <div class="metadata-item full-width">
+            <span class="metadata-label">Tags</span>
+            <div class="tags-list">
+              {metadata.tags.map((tag) => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <!-- Pattern Content -->
+    <div class="pattern-content">
+      <slot />
+    </div>
+  </div>
+</StarlightPage>
+
+<style>
+  .pattern-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .pattern-metadata {
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .metadata-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .metadata-footer {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+    gap: 1rem;
+  }
+
+  .metadata-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .metadata-item.full-width {
+    flex: 1 1 100%;
+  }
+
+  .metadata-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-color-gray-3);
+  }
+
+  .metadata-value {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    width: fit-content;
+  }
+
+  .category-icon {
+    font-size: 1.125rem;
+  }
+
+  .difficulty-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    text-transform: capitalize;
+    width: fit-content;
+  }
+
+  .status-badge {
+    background: var(--sl-color-orange-low);
+    color: var(--sl-color-orange-high);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    width: fit-content;
+  }
+
+  .technologies-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .metadata-text {
+    font-size: 0.875rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  .metadata-text strong {
+    color: var(--sl-color-gray-3);
+    font-weight: 600;
+  }
+
+  .pattern-content {
+    /* Content styles handled by Starlight */
+  }
+
+  /* Color utilities */
+  .bg-green-100 { background-color: #dcfce7; }
+  .text-green-800 { color: #166534; }
+  .bg-yellow-100 { background-color: #fef3c7; }
+  .text-yellow-800 { color: #854d0e; }
+  .bg-red-100 { background-color: #fee2e2; }
+  .text-red-800 { color: #991b1b; }
+
+  @media (prefers-color-scheme: dark) {
+    .bg-green-100 { background-color: #14532d; }
+    .text-green-800 { color: #bbf7d0; }
+    .bg-yellow-100 { background-color: #713f12; }
+    .text-yellow-800 { color: #fef08a; }
+    .bg-red-100 { background-color: #7f1d1d; }
+    .text-red-800 { color: #fecaca; }
+  }
+</style>
