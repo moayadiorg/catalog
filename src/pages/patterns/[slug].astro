@@ -2,7 +2,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { marked } from 'marked';
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { Code } from '@astrojs/starlight/components';
 import TechnologyBadge from '../../components/TechnologyBadge.astro';
@@ -33,17 +32,13 @@ const patternDir = join('patterns-source/patterns', slug);
 const yamlContent = await readFile(join(patternDir, 'pattern.yaml'), 'utf-8');
 const pattern = parse(yamlContent);
 
-// Read README.md and convert to HTML
-const readmeContent = await readFile(join(patternDir, 'README.md'), 'utf-8');
+// Get GitHub repository URL
+const githubRepoUrl = `https://github.com/moayadiorg/patterns/tree/main/patterns/${slug}`;
 
-// Fix image paths to point to GitHub
-const readmeWithFixedPaths = readmeContent.replace(
-  /!\[([^\]]*)\]\(diagrams\/([^\)]+)\)/g,
-  `![$1](https://raw.githubusercontent.com/moayadiorg/patterns/main/patterns/${slug}/diagrams/$2)`
-);
-
-// Convert markdown to HTML
-const readme = marked.parse(readmeWithFixedPaths);
+// Get architecture diagram URL if it exists
+const architectureDiagramUrl = pattern.architecture_diagram
+  ? `https://raw.githubusercontent.com/moayadiorg/patterns/main/patterns/${slug}/${pattern.architecture_diagram}`
+  : null;
 
 // Read implementation files
 const implementationFiles = [];
@@ -61,13 +56,42 @@ if (pattern.implementation?.code_snippets) {
   }
 }
 
-// Build page props for Starlight
+// Build page props for Starlight with proper headings for TOC
+const headings = [
+  { depth: 2, slug: 'overview', text: 'Overview' },
+  { depth: 2, slug: 'architecture', text: 'Architecture' },
+];
+
+if (implementationFiles.length > 0) {
+  headings.push({ depth: 2, slug: 'implementation', text: 'Implementation Code' });
+}
+
+if (pattern.prerequisites && pattern.prerequisites.length > 0) {
+  headings.push({ depth: 2, slug: 'prerequisites', text: 'Prerequisites' });
+}
+
+if (pattern.performance) {
+  headings.push({ depth: 2, slug: 'performance', text: 'Performance' });
+}
+
+if (pattern.security && pattern.security.length > 0) {
+  headings.push({ depth: 2, slug: 'security', text: 'Security' });
+}
+
+if (pattern.limitations && pattern.limitations.length > 0) {
+  headings.push({ depth: 2, slug: 'limitations', text: 'Limitations' });
+}
+
+if (pattern.related_patterns && pattern.related_patterns.length > 0) {
+  headings.push({ depth: 2, slug: 'related-patterns', text: 'Related Patterns' });
+}
+
 const pageProps = {
   frontmatter: {
     title: pattern.title,
     description: pattern.description,
   },
-  headings: []
+  headings
 };
 
 // Map complexity to difficulty for consistency
@@ -162,12 +186,53 @@ const difficultyColors = {
       )}
     </div>
 
-    <!-- README Content -->
-    <div class="pattern-content" set:html={readme} />
+    <!-- Overview / Use Case -->
+    <section id="overview">
+      <h2>Overview</h2>
+      {pattern.use_case ? (
+        <div class="use-case">
+          <p>{pattern.use_case}</p>
+        </div>
+      ) : (
+        <p>{pattern.description}</p>
+      )}
+
+      <div class="github-link-box">
+        <a href={githubRepoUrl} target="_blank" rel="noopener noreferrer" class="github-link">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View Full Pattern on GitHub
+        </a>
+        <p class="github-hint">See complete implementation details, code examples, and README documentation</p>
+      </div>
+    </section>
+
+    <!-- Architecture Diagram -->
+    <section id="architecture">
+      <h2>Architecture</h2>
+      {architectureDiagramUrl ? (
+        <div class="architecture-diagram">
+          <img src={architectureDiagramUrl} alt="Architecture Diagram" />
+        </div>
+      ) : (
+        <p>No architecture diagram available.</p>
+      )}
+    </section>
+
+    <!-- Prerequisites -->
+    {pattern.prerequisites && pattern.prerequisites.length > 0 && (
+      <section id="prerequisites" class="info-section">
+        <h2>Prerequisites</h2>
+        <ul class="info-list">
+          {pattern.prerequisites.map((item) => <li>{item}</li>)}
+        </ul>
+      </section>
+    )}
 
     <!-- Implementation Code Snippets -->
     {implementationFiles.length > 0 && (
-      <div class="implementation-section">
+      <section id="implementation" class="implementation-section">
         <h2>Implementation Code</h2>
         {implementationFiles.map((snippet) => (
           <div class="code-snippet">
@@ -184,44 +249,44 @@ const difficultyColors = {
             </a>
           </div>
         ))}
-      </div>
+      </section>
     )}
 
     <!-- Performance Section -->
     {pattern.performance && (
-      <div class="info-section">
+      <section id="performance" class="info-section">
         <h2>Performance Characteristics</h2>
         <ul class="info-list">
           {pattern.performance.latency && <li><strong>Latency:</strong> {pattern.performance.latency}</li>}
           {pattern.performance.throughput && <li><strong>Throughput:</strong> {pattern.performance.throughput}</li>}
           {pattern.performance.scalability && <li><strong>Scalability:</strong> {pattern.performance.scalability}</li>}
         </ul>
-      </div>
+      </section>
     )}
 
     <!-- Security Considerations -->
     {pattern.security && pattern.security.length > 0 && (
-      <div class="info-section security-section">
+      <section id="security" class="info-section security-section">
         <h2>🔒 Security Considerations</h2>
         <ul class="info-list">
           {pattern.security.map((item) => <li>{item}</li>)}
         </ul>
-      </div>
+      </section>
     )}
 
     <!-- Limitations -->
     {pattern.limitations && pattern.limitations.length > 0 && (
-      <div class="info-section warning-section">
+      <section id="limitations" class="info-section warning-section">
         <h2>⚠️ Limitations & Considerations</h2>
         <ul class="info-list">
           {pattern.limitations.map((item) => <li>{item}</li>)}
         </ul>
-      </div>
+      </section>
     )}
 
     <!-- Related Patterns -->
     {pattern.related_patterns && pattern.related_patterns.length > 0 && (
-      <div class="related-patterns">
+      <section id="related-patterns" class="related-patterns">
         <h2>Related Patterns</h2>
         <div class="pattern-links">
           {pattern.related_patterns.map((relatedSlug) => (
@@ -230,7 +295,7 @@ const difficultyColors = {
             </a>
           ))}
         </div>
-      </div>
+      </section>
     )}
   </div>
 </StarlightPage>
@@ -340,14 +405,62 @@ const difficultyColors = {
     font-weight: 600;
   }
 
-  .pattern-content {
+  .use-case {
     line-height: 1.7;
+    color: var(--sl-color-gray-2);
+    margin-bottom: 2rem;
+    white-space: pre-wrap;
   }
 
-  .pattern-content :global(img) {
+  .github-link-box {
+    background: var(--sl-color-bg-sidebar);
+    border: 2px solid var(--sl-color-accent);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    text-align: center;
+  }
+
+  .github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--sl-color-accent);
+    color: var(--sl-color-white);
+    padding: 0.875rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.0625rem;
+    transition: all 0.2s;
+  }
+
+  .github-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .github-link svg {
+    flex-shrink: 0;
+  }
+
+  .github-hint {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    font-size: 0.875rem;
+    color: var(--sl-color-gray-3);
+  }
+
+  .architecture-diagram {
+    margin-top: 1rem;
+  }
+
+  .architecture-diagram img {
     max-width: 100%;
+    height: auto;
     border-radius: 0.5rem;
     border: 1px solid var(--sl-color-gray-5);
+    display: block;
   }
 
   .implementation-section {
