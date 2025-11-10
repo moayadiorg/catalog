@@ -2,6 +2,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { marked } from 'marked';
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { Code } from '@astrojs/starlight/components';
 import TechnologyBadge from '../../components/TechnologyBadge.astro';
@@ -32,8 +33,17 @@ const patternDir = join('patterns-source/patterns', slug);
 const yamlContent = await readFile(join(patternDir, 'pattern.yaml'), 'utf-8');
 const pattern = parse(yamlContent);
 
-// Read README.md
-const readme = await readFile(join(patternDir, 'README.md'), 'utf-8');
+// Read README.md and convert to HTML
+const readmeContent = await readFile(join(patternDir, 'README.md'), 'utf-8');
+
+// Fix image paths to point to GitHub
+const readmeWithFixedPaths = readmeContent.replace(
+  /!\[([^\]]*)\]\(diagrams\/([^\)]+)\)/g,
+  `![$1](https://raw.githubusercontent.com/moayadiorg/patterns/main/patterns/${slug}/diagrams/$2)`
+);
+
+// Convert markdown to HTML
+const readme = marked.parse(readmeWithFixedPaths);
 
 // Read implementation files
 const implementationFiles = [];
@@ -153,9 +163,7 @@ const difficultyColors = {
     </div>
 
     <!-- README Content -->
-    <div class="pattern-content">
-      <div set:html={readme} />
-    </div>
+    <div class="pattern-content" set:html={readme} />
 
     <!-- Implementation Code Snippets -->
     {implementationFiles.length > 0 && (
