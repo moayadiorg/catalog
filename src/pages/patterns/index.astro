@@ -1,0 +1,209 @@
+---
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { parse } from 'yaml';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import PatternCard from '../../components/PatternCard.astro';
+
+// Read all patterns
+const patternsDir = 'patterns-source/patterns';
+const folders = await readdir(patternsDir, { withFileTypes: true });
+
+const patterns = await Promise.all(
+  folders
+    .filter(f => f.isDirectory() && !f.name.startsWith('.'))
+    .filter(f => f.name !== 'pattern-template')
+    .map(async (folder) => {
+      try {
+        const yamlPath = join(patternsDir, folder.name, 'pattern.yaml');
+        const yamlContent = await readFile(yamlPath, 'utf-8');
+        const pattern = parse(yamlContent);
+        return {
+          slug: folder.name,
+          ...pattern
+        };
+      } catch (error) {
+        console.error(`Error reading pattern ${folder.name}:`, error);
+        return null;
+      }
+    })
+);
+
+// Filter out any failed patterns
+const validPatterns = patterns.filter(p => p !== null);
+
+// Group by category
+const categories = [...new Set(validPatterns.map(p => p.category))].sort();
+
+const pageProps = {
+  frontmatter: {
+    title: 'Browse Patterns',
+    description: 'Explore our complete collection of technical architecture patterns'
+  },
+  headings: []
+};
+
+const categoryIcons: Record<string, string> = {
+  messaging: '📨',
+  automation: '🤖',
+  observability: '👁️',
+  security: '🔒',
+  monitoring: '📊',
+  integration: '🔗',
+  'data-protection': '💾',
+  resilience: '⚡',
+  compute: '⚡',
+  networking: '🌐',
+  storage: '💿'
+};
+---
+
+<StarlightPage {...pageProps}>
+  <div class="patterns-index">
+    <div class="index-header">
+      <h1>Browse Patterns</h1>
+      <p class="index-description">
+        Explore our collection of {validPatterns.length} technical architecture patterns.
+        Each pattern provides detailed documentation, implementation examples, and best practices.
+      </p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">{validPatterns.length}</div>
+        <div class="stat-label">Total Patterns</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{categories.length}</div>
+        <div class="stat-label">Categories</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{[...new Set(validPatterns.flatMap(p => p.technologies?.map(t => t.name) || []))].length}</div>
+        <div class="stat-label">Technologies</div>
+      </div>
+    </div>
+
+    <!-- Patterns by Category -->
+    {categories.map(category => {
+      const categoryPatterns = validPatterns.filter(p => p.category === category);
+      return (
+        <section class="category-section">
+          <h2 class="category-title">
+            <span class="category-icon">{categoryIcons[category.toLowerCase()] || '📋'}</span>
+            {category.charAt(0).toUpperCase() + category.slice(1)}
+            <span class="category-count">({categoryPatterns.length})</span>
+          </h2>
+
+          <div class="patterns-grid">
+            {categoryPatterns.map(pattern => (
+              <PatternCard
+                title={pattern.title}
+                description={pattern.description}
+                category={pattern.category}
+                technologies={pattern.technologies?.map(t => t.name) || []}
+                link={`/catalog/patterns/${pattern.slug}`}
+                difficulty={pattern.complexity || 'intermediate'}
+              />
+            ))}
+          </div>
+        </section>
+      );
+    })}
+
+    {validPatterns.length === 0 && (
+      <div class="no-patterns">
+        <p>No patterns available yet. Check back soon!</p>
+      </div>
+    )}
+  </div>
+</StarlightPage>
+
+<style>
+  .patterns-index {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .index-header {
+    margin-bottom: 2rem;
+  }
+
+  .index-header h1 {
+    margin-bottom: 0.5rem;
+  }
+
+  .index-description {
+    color: var(--sl-color-gray-2);
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+
+  .stat-card {
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--sl-color-accent);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.9375rem;
+    color: var(--sl-color-gray-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  .category-section {
+    margin-bottom: 3rem;
+  }
+
+  .category-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--sl-color-gray-5);
+  }
+
+  .category-icon {
+    font-size: 1.5rem;
+  }
+
+  .category-count {
+    font-size: 1rem;
+    color: var(--sl-color-gray-3);
+    font-weight: 400;
+  }
+
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .no-patterns {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--sl-color-gray-2);
+    font-size: 1.125rem;
+  }
+</style>

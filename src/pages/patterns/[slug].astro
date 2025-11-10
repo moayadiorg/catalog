@@ -1,0 +1,462 @@
+---
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { parse } from 'yaml';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { Code } from '@astrojs/starlight/components';
+import TechnologyBadge from '../../components/TechnologyBadge.astro';
+
+export async function getStaticPaths() {
+  const patternsDir = 'patterns-source/patterns';
+
+  try {
+    const folders = await readdir(patternsDir, { withFileTypes: true });
+
+    const patterns = folders
+      .filter(f => f.isDirectory() && !f.name.startsWith('.'))
+      .filter(f => f.name !== 'pattern-template');
+
+    return patterns.map(folder => ({
+      params: { slug: folder.name },
+    }));
+  } catch (error) {
+    console.error('Error reading patterns directory:', error);
+    return [];
+  }
+}
+
+const { slug } = Astro.params;
+const patternDir = join('patterns-source/patterns', slug);
+
+// Read pattern.yaml
+const yamlContent = await readFile(join(patternDir, 'pattern.yaml'), 'utf-8');
+const pattern = parse(yamlContent);
+
+// Read README.md
+const readme = await readFile(join(patternDir, 'README.md'), 'utf-8');
+
+// Read implementation files
+const implementationFiles = [];
+if (pattern.implementation?.code_snippets) {
+  for (const snippet of pattern.implementation.code_snippets) {
+    try {
+      const code = await readFile(join(patternDir, snippet.file), 'utf-8');
+      implementationFiles.push({
+        ...snippet,
+        code
+      });
+    } catch (error) {
+      console.error(`Error reading ${snippet.file}:`, error);
+    }
+  }
+}
+
+// Build page props for Starlight
+const pageProps = {
+  frontmatter: {
+    title: pattern.title,
+    description: pattern.description,
+  },
+  headings: []
+};
+
+// Map complexity to difficulty for consistency
+const difficulty = pattern.complexity || 'intermediate';
+const difficultyColors = {
+  beginner: 'bg-green-100 text-green-800',
+  intermediate: 'bg-yellow-100 text-yellow-800',
+  advanced: 'bg-red-100 text-red-800'
+};
+---
+
+<StarlightPage {...pageProps}>
+  <div class="pattern-page">
+    <!-- Pattern Metadata -->
+    <div class="pattern-metadata">
+      <div class="metadata-row">
+        {pattern.category && (
+          <div class="metadata-item">
+            <span class="metadata-label">Category</span>
+            <span class="category-badge">{pattern.category}</span>
+          </div>
+        )}
+
+        <div class="metadata-item">
+          <span class="metadata-label">Complexity</span>
+          <span class={`difficulty-badge ${difficultyColors[difficulty]}`}>
+            {difficulty}
+          </span>
+        </div>
+
+        {pattern.estimated_cost && (
+          <div class="metadata-item">
+            <span class="metadata-label">Estimated Cost</span>
+            <span class="metadata-value">{pattern.estimated_cost}</span>
+          </div>
+        )}
+
+        {pattern.version && (
+          <div class="metadata-item">
+            <span class="metadata-label">Version</span>
+            <span class="metadata-value">v{pattern.version}</span>
+          </div>
+        )}
+      </div>
+
+      {pattern.technologies && pattern.technologies.length > 0 && (
+        <div class="metadata-row">
+          <div class="metadata-item full-width">
+            <span class="metadata-label">Technologies</span>
+            <div class="technologies-list">
+              {pattern.technologies.map((tech) => (
+                <TechnologyBadge
+                  name={tech.name}
+                  icon={tech.type === 'compute' ? '⚡' : tech.type === 'messaging' ? '📨' : tech.type === 'monitoring' ? '📊' : tech.type === 'security' ? '🔒' : '🔧'}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pattern.author && (
+        <div class="metadata-row metadata-footer">
+          <span class="metadata-text">
+            <strong>Author:</strong> {pattern.author.name}
+            {pattern.author.organization && ` (${pattern.author.organization})`}
+          </span>
+          {pattern.created_date && (
+            <span class="metadata-text">
+              <strong>Created:</strong> {pattern.created_date}
+            </span>
+          )}
+          {pattern.last_updated && (
+            <span class="metadata-text">
+              <strong>Last Updated:</strong> {pattern.last_updated}
+            </span>
+          )}
+        </div>
+      )}
+
+      {pattern.tags && pattern.tags.length > 0 && (
+        <div class="metadata-row">
+          <div class="metadata-item full-width">
+            <span class="metadata-label">Tags</span>
+            <div class="tags-list">
+              {pattern.tags.map((tag) => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <!-- README Content -->
+    <div class="pattern-content">
+      <div set:html={readme} />
+    </div>
+
+    <!-- Implementation Code Snippets -->
+    {implementationFiles.length > 0 && (
+      <div class="implementation-section">
+        <h2>Implementation Code</h2>
+        {implementationFiles.map((snippet) => (
+          <div class="code-snippet">
+            <h3>{snippet.title}</h3>
+            {snippet.description && <p class="snippet-description">{snippet.description}</p>}
+            <Code code={snippet.code} lang={snippet.language} title={snippet.title} />
+            <a
+              href={`https://github.com/moayadiorg/patterns/blob/main/patterns/${slug}/${snippet.file}`}
+              class="view-source"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on GitHub →
+            </a>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <!-- Performance Section -->
+    {pattern.performance && (
+      <div class="info-section">
+        <h2>Performance Characteristics</h2>
+        <ul class="info-list">
+          {pattern.performance.latency && <li><strong>Latency:</strong> {pattern.performance.latency}</li>}
+          {pattern.performance.throughput && <li><strong>Throughput:</strong> {pattern.performance.throughput}</li>}
+          {pattern.performance.scalability && <li><strong>Scalability:</strong> {pattern.performance.scalability}</li>}
+        </ul>
+      </div>
+    )}
+
+    <!-- Security Considerations -->
+    {pattern.security && pattern.security.length > 0 && (
+      <div class="info-section security-section">
+        <h2>🔒 Security Considerations</h2>
+        <ul class="info-list">
+          {pattern.security.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    )}
+
+    <!-- Limitations -->
+    {pattern.limitations && pattern.limitations.length > 0 && (
+      <div class="info-section warning-section">
+        <h2>⚠️ Limitations & Considerations</h2>
+        <ul class="info-list">
+          {pattern.limitations.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    )}
+
+    <!-- Related Patterns -->
+    {pattern.related_patterns && pattern.related_patterns.length > 0 && (
+      <div class="related-patterns">
+        <h2>Related Patterns</h2>
+        <div class="pattern-links">
+          {pattern.related_patterns.map((relatedSlug) => (
+            <a href={`/catalog/patterns/${relatedSlug}`} class="pattern-link">
+              {relatedSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</StarlightPage>
+
+<style>
+  .pattern-page {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .pattern-metadata {
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .metadata-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .metadata-footer {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+    gap: 1rem;
+  }
+
+  .metadata-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .metadata-item.full-width {
+    flex: 1 1 100%;
+  }
+
+  .metadata-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-color-gray-3);
+  }
+
+  .metadata-value {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    width: fit-content;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .difficulty-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    text-transform: capitalize;
+    width: fit-content;
+    font-weight: 600;
+  }
+
+  .technologies-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .metadata-text {
+    font-size: 0.875rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  .metadata-text strong {
+    color: var(--sl-color-gray-3);
+    font-weight: 600;
+  }
+
+  .pattern-content {
+    line-height: 1.7;
+  }
+
+  .pattern-content :global(img) {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--sl-color-gray-5);
+  }
+
+  .implementation-section {
+    margin-top: 2rem;
+  }
+
+  .code-snippet {
+    margin-bottom: 2rem;
+  }
+
+  .snippet-description {
+    color: var(--sl-color-gray-2);
+    margin-bottom: 1rem;
+  }
+
+  .view-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--sl-color-accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin-top: 0.5rem;
+  }
+
+  .view-source:hover {
+    text-decoration: underline;
+  }
+
+  .info-section {
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .info-section h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  .info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .info-list li {
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--sl-color-gray-2);
+    line-height: 1.6;
+  }
+
+  .info-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--sl-color-accent);
+    font-weight: 700;
+  }
+
+  .security-section {
+    border-color: var(--sl-color-green);
+  }
+
+  .warning-section {
+    border-color: var(--sl-color-orange);
+  }
+
+  .related-patterns {
+    margin-top: 2rem;
+  }
+
+  .pattern-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .pattern-link {
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-gray-5);
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    color: var(--sl-color-white);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .pattern-link:hover {
+    border-color: var(--sl-color-accent);
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+  }
+
+  /* Color utilities */
+  .bg-green-100 { background-color: #dcfce7; }
+  .text-green-800 { color: #166534; }
+  .bg-yellow-100 { background-color: #fef3c7; }
+  .text-yellow-800 { color: #854d0e; }
+  .bg-red-100 { background-color: #fee2e2; }
+  .text-red-800 { color: #991b1b; }
+
+  @media (prefers-color-scheme: dark) {
+    .bg-green-100 { background-color: #14532d; }
+    .text-green-800 { color: #bbf7d0; }
+    .bg-yellow-100 { background-color: #713f12; }
+    .text-yellow-800 { color: #fef08a; }
+    .bg-red-100 { background-color: #7f1d1d; }
+    .text-red-800 { color: #fecaca; }
+  }
+</style>
