@@ -5,7 +5,7 @@ import starlight from '@astrojs/starlight';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://moayadiorg.github.io',
-	base: '/catatlog',
+	base: '/catalog',
 	integrations: [
 		starlight({
 			title: 'Technical Patterns Catalog',
