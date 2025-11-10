@@ -10,10 +10,6 @@ export default defineConfig({
 		starlight({
 			title: 'Technical Patterns Catalog',
 			description: 'A community-driven catalog of technical architecture patterns',
-			logo: {
-				src: './src/assets/logo.svg',
-				replacesTitle: false,
-			},
 			social: [
 				{
 					icon: 'github',
