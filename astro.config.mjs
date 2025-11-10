@@ -16,8 +16,9 @@ export default defineConfig({
 			},
 			social: [
 				{
-					name: 'github',
-					url: 'https://github.com/moayadiorg/patterns',
+					icon: 'github',
+					label: 'GitHub',
+					href: 'https://github.com/moayadiorg/patterns',
 				},
 			],
 			editLink: {
