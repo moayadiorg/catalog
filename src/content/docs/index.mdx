@@ -1,40 +1,84 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: Technical Patterns Catalog
+description: A community-driven catalog of technical architecture patterns
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
+  tagline: Discover, share, and reuse proven architectural patterns from the community
   image:
     file: ../../assets/houston.webp
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Browse Patterns
+      link: /patterns/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/moayadiorg/patterns
       icon: external
-      variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Next steps
+## Welcome to the Technical Patterns Catalog
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
+A searchable collection of technical architecture patterns submitted by solution architects and engineers. Each pattern provides detailed documentation, diagrams, and implementation guidance to help you solve common technical challenges.
+
+## Pattern Categories
+
+<CardGrid>
+  <Card title="🤖 Automation" icon="rocket">
+    Automated workflows, CI/CD pipelines, Infrastructure as Code, and operational task automation.
+  </Card>
+  <Card title="👁️ Observability" icon="magnifier">
+    Monitoring, logging, distributed tracing, and performance analysis patterns.
+  </Card>
+  <Card title="🔒 Security" icon="seti:lock">
+    Security controls, compliance automation, secrets management, and protection patterns.
+  </Card>
+  <Card title="📊 Monitoring" icon="bars">
+    System and application monitoring, alerting systems, and health checks.
+  </Card>
+  <Card title="🔗 Integration" icon="link">
+    API integration, event-driven architecture, message queues, and data synchronization.
+  </Card>
+  <Card title="💾 Data Protection" icon="seti:db">
+    Backup automation, disaster recovery, data replication, and snapshot management.
+  </Card>
 </CardGrid>
+
+## How It Works
+
+1. **Browse** - Search and filter patterns by category, technology, or use case
+2. **Learn** - Read detailed documentation with architecture diagrams and implementation steps
+3. **Implement** - Follow step-by-step guides with code examples and best practices
+4. **Contribute** - Share your own patterns with the community
+
+## Getting Started
+
+<CardGrid>
+  <Card title="For Users" icon="open-book">
+    Learn how to search, browse, and implement patterns from the catalog.
+
+    [Get Started →](/getting-started/how-to-use)
+  </Card>
+  <Card title="For Contributors" icon="pencil">
+    Contribute your own patterns and help grow the community knowledge base.
+
+    [Contributing Guide →](/getting-started/contributing)
+  </Card>
+</CardGrid>
+
+## Why Use This Catalog?
+
+- **Proven Solutions**: All patterns are reviewed by subject matter experts
+- **Comprehensive Documentation**: Each pattern includes diagrams, prerequisites, and implementation steps
+- **Community-Driven**: Patterns come from real-world implementations
+- **Version Controlled**: All patterns are tracked in Git with full history
+- **Open Source**: Free to use and contribute
+
+## Community
+
+This catalog is built and maintained by the community. Contributions are welcome!
+
+- Submit patterns via [GitHub Pull Requests](https://github.com/moayadiorg/patterns)
+- Report issues or request patterns via [GitHub Issues](https://github.com/moayadiorg/patterns/issues)
+- Star the project on [GitHub](https://github.com/moayadiorg/patterns)
