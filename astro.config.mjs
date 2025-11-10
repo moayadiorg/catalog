@@ -14,9 +14,12 @@ export default defineConfig({
 				src: './src/assets/logo.svg',
 				replacesTitle: false,
 			},
-			social: {
-				github: 'https://github.com/moayadiorg/patterns',
-			},
+			social: [
+				{
+					name: 'github',
+					url: 'https://github.com/moayadiorg/patterns',
+				},
+			],
 			editLink: {
 				baseUrl: 'https://github.com/moayadiorg/patterns/edit/main/',
 			},
