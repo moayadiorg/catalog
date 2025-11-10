@@ -22,27 +22,12 @@ export default defineConfig({
 			},
 			sidebar: [
 				{
-					label: 'Getting Started',
-					items: [
-						{ label: 'Introduction', slug: 'index' },
-						{ label: 'How to Use', slug: 'getting-started/how-to-use' },
-						{ label: 'Contributing', slug: 'getting-started/contributing' },
-					],
+					label: 'Guides',
+					autogenerate: { directory: 'guides' },
 				},
 				{
-					label: 'Patterns',
-					autogenerate: { directory: 'patterns' },
-				},
-				{
-					label: 'Categories',
-					items: [
-						{ label: 'Automation', slug: 'categories/automation' },
-						{ label: 'Observability', slug: 'categories/observability' },
-						{ label: 'Security', slug: 'categories/security' },
-						{ label: 'Monitoring', slug: 'categories/monitoring' },
-						{ label: 'Integration', slug: 'categories/integration' },
-						{ label: 'Data Protection', slug: 'categories/data-protection' },
-					],
+					label: 'Reference',
+					autogenerate: { directory: 'reference' },
 				},
 			],
 			customCss: [
